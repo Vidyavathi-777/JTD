@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support JTD — Transforming Lives Together</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet" />
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+  <style>
+    :root {
+      --coral: #E8745C;
+      --coral-hover: #d6634d;
+      --blue: #3B719F;
+      --dark: #212529;
+      --muted: #6c757d;
+      --light: #f8f9fa;
+      --border: #dee2e6;
+      --white: #ffffff;
+      --radius: 8px;
+      --shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--white);
+      color: var(--dark);
+      line-height: 1.6;
+    }
+
+    .page-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    /* ── Header / Logo ── */
+    header {
+      margin-bottom: 50px;
+      display: flex;
+      justify-content: center;
+    }
+    .logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--dark);
+      text-align: center;
+    }
+    .logo img {
+      width: 15rem;
+      height: auto;
+      object-fit: contain;
+    }
+    .logo-text {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--blue);
+      display: none; /* Hide text if logo has it */
+    }
+
+    /* ── Main Layout ── */
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 80px;
+      align-items: start;
+    }
+
+    @media (max-width: 992px) {
+      .grid-container { grid-template-columns: 1fr; gap: 40px; }
+      .grid-container > div:nth-child(2) { order: -1; } /* Content first on mobile */
+    }
+
+    /* ── Right Content ── */
+    .content-area h1 {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 42px;
+      line-height: 1.2;
+      margin-bottom: 24px;
+      color: var(--dark);
+    }
+    .content-area p {
+      font-size: 18px;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+    .contact-info {
+      background: var(--light);
+      padding: 30px;
+      border-radius: var(--radius);
+      border-left: 4px solid var(--blue);
+    }
+    .contact-info h3 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--blue);
+      margin-bottom: 16px;
+    }
+    .contact-item {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+    .contact-item span:first-child { font-size: 18px; }
+
+    /* ── Left Form Card ── */
+    .donation-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 30px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      background: none;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--coral);
+      border-bottom-color: var(--coral);
+    }
+
+    .form-section { display: none; }
+    .form-section.active { display: block; }
+
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--dark);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+    }
+
+    .amount-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+    .amount-btn {
+      padding: 14px 8px;
+      border: 1px solid var(--border);
+      background: var(--white);
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+    .amount-btn:hover { border-color: var(--coral); color: var(--coral); }
+    .amount-btn.selected { background: var(--coral); color: var(--white); border-color: var(--coral); }
+
+    .custom-wrap { position: relative; margin-bottom: 24px; }
+    .rupee { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: 600; color: var(--muted); }
+    input.custom-amt {
+      width: 100%;
+      padding: 14px 14px 14px 34px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: inherit;
+      font-size: 16px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input.custom-amt:focus { border-color: var(--blue); }
+
+    .input-group { margin-bottom: 16px; }
+    input[type="text"], input[type="email"], input[type="tel"], textarea {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 15px;
+      outline: none;
+      background: var(--light);
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus { border: 1px solid var(--blue); background: var(--white); }
+
+    .submit-btn {
+      width: 100%;
+      padding: 18px;
+      background: var(--coral);
+      color: var(--white);
+      border: none;
+      border-radius: 50px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      box-shadow: 0 4px 15px rgba(232, 116, 92, 0.2);
+    }
+    .submit-btn:hover { background: var(--coral-hover); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(232, 116, 92, 0.3); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .freq-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 24px;
+    }
+    .freq-btn {
+      padding: 12px; border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--white); text-align: center; cursor: pointer; font-size: 13px; font-weight: 500;
+      transition: all 0.2s;
+    }
+    .freq-btn:hover { border-color: var(--blue); }
+    .freq-btn.selected { border-color: var(--blue); background: #ebf3f9; color: var(--blue); font-weight: 700; }
+
+    /* ── Success / Toast ── */
+    .success-view { display: none; text-align: center; padding: 40px 0; }
+    .success-view.active { display: block; }
+    .toast {
+      position: fixed; bottom: 30px; right: 30px;
+      background: #333; color: #fff; padding: 14px 24px;
+      border-radius: var(--radius); opacity: 0; transform: translateY(20px);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000;
+      font-weight: 500; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.error { background: #d93025; }
+
+    .spinner {
+      width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin 0.8s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner.show { display: block; }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+  <!-- Header Logo -->
+  <header>
+    <a href="/" class="logo">
+      <img src="/image.png" alt="Joining The Dots Logo" />
+      <div class="logo-text">Joining The Dots</div>
+    </a>
+  </header>
+
+  <div class="grid-container">
+    <!-- Left Column: Donation Form -->
+    <div class="donation-card" id="donationCard">
+      
+      <!-- Form Content -->
+      <div id="formContent">
+        <div class="tabs">
+          <button class="tab-btn active" id="tab-onetime" onclick="switchTab('onetime')">Give Once</button>
+          <button class="tab-btn" id="tab-monthly" onclick="switchTab('monthly')">Monthly Gift</button>
+        </div>
+
+        <!-- Onetime Section -->
+        <div class="form-section active" id="section-onetime">
+          <label class="field-label">Choose an amount</label>
+          <div class="amount-grid" id="onetime-amounts">
+            <button class="amount-btn" data-val="100"  onclick="selectAmount('onetime',100,this)">₹100</button>
+            <button class="amount-btn" data-val="500"  onclick="selectAmount('onetime',500,this)">₹500</button>
+            <button class="amount-btn" data-val="1000" onclick="selectAmount('onetime',1000,this)">₹1,000</button>
+            <button class="amount-btn" data-val="2000" onclick="selectAmount('onetime',2000,this)">₹2,000</button>
+            <button class="amount-btn" data-val="5000" onclick="selectAmount('onetime',5000,this)">₹5,000</button>
+            <button class="amount-btn" data-val="custom" onclick="selectAmount('onetime','custom',this)">Other</button>
+          </div>
+          <div class="custom-wrap">
+            <span class="rupee">₹</span>
+            <input type="number" class="custom-amt" id="onetime-amount" placeholder="Enter Amount" />
+          </div>
+
+          <div class="input-group">
+            <input type="text" id="ot-name" placeholder="Full Name" />
+          </div>
+          <div class="input-group">
+            <input type="email" id="ot-email" placeholder="Email Address" />
+          </div>
+          <div class="input-group">
+            <input type="tel" id="ot-phone" placeholder="Phone Number (Optional)" />
+          </div>
+          <div class="input-group">
+            <textarea id="ot-message" placeholder="A message of support (Optional)"></textarea>
+          </div>
+
+          <button class="submit-btn" id="ot-submit-btn" onclick="submitOneTime()">
+            <span id="ot-btn-text">DONATE NOW</span>
+            <div class="spinner" id="ot-spinner"></div>
+          </button>
+        </div>
+
+        <!-- Monthly Section -->
+        <div class="form-section" id="section-monthly">
+          <label class="field-label">How often would you like to give?</label>
+          <div class="freq-grid">
+            <button class="freq-btn selected" id="freq-monthly" onclick="selectFreq('monthly',this)">Monthly</button>
+            <button class="freq-btn" id="freq-quarterly" onclick="selectFreq('quarterly',this)">Quarterly</button>
+            <button class="freq-btn" id="freq-half_yearly" onclick="selectFreq('half_yearly',this)">Half-Yearly</button>
+            <button class="freq-btn" id="freq-yearly" onclick="selectFreq('yearly',this)">Yearly</button>
+          </div>
+
+          <label class="field-label">Choose an amount per cycle</label>
+          <div class="amount-grid" id="sub-amounts">
+            <button class="amount-btn" data-val="200"  onclick="selectAmount('sub',200,this)">₹200</button>
+            <button class="amount-btn" data-val="500"  onclick="selectAmount('sub',500,this)">₹500</button>
+            <button class="amount-btn" data-val="1000" onclick="selectAmount('sub',1000,this)">₹1,000</button>
+            <button class="amount-btn" data-val="2000" onclick="selectAmount('sub',2000,this)">₹2,000</button>
+            <button class="amount-btn" data-val="5000" onclick="selectAmount('sub',5000,this)">₹5,000</button>
+            <button class="amount-btn" data-val="custom" onclick="selectAmount('sub','custom',this)">Other</button>
+          </div>
+          <div class="custom-wrap">
+            <span class="rupee">₹</span>
+            <input type="number" class="custom-amt" id="sub-amount" placeholder="Enter Amount" />
+          </div>
+
+          <div class="input-group">
+            <input type="text" id="sub-name" placeholder="Full Name" />
+          </div>
+          <div class="input-group">
+            <input type="email" id="sub-email" placeholder="Email Address" />
+          </div>
+          <div class="input-group">
+            <input type="tel" id="sub-phone" placeholder="Phone Number (Optional)" />
+          </div>
+
+          <button class="submit-btn" id="sub-submit-btn" onclick="submitSubscription()">
+            <span id="sub-btn-text">START AUTO-PAY</span>
+            <div class="spinner" id="sub-spinner"></div>
+          </button>
+          <p style="text-align:center; font-size:11px; color:var(--muted); margin-top:15px;">You can cancel your recurring donation at any time.</p>
+        </div>
+      </div>
+
+      <!-- Success View -->
+      <div class="success-view" id="successView">
+        <div style="font-size: 64px; margin-bottom: 24px;">💚</div>
+        <h2 style="font-family:'Montserrat', sans-serif; font-size: 28px; margin-bottom: 15px;">Thank You!</h2>
+        <p id="successMsg" style="color: var(--muted); font-size: 16px; margin-bottom: 32px; padding: 0 20px;"></p>
+        <button class="submit-btn" onclick="window.location.reload()">Back to Donation</button>
+      </div>
+
+    </div>
+
+    <!-- Right Column: Context & NGO Details -->
+    <div class="content-area">
+      <h4 style="color: var(--coral); font-size: 14px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 15px; font-weight: 700;">Support Our Mission</h4>
+      <h1>Help Us Transform Lives</h1>
+      <p>Your contribution directly impacts rural children, youth, and women—giving them access to education, sports, arts, and opportunities they deserve. Your support keeps our mission alive.</p>
+
+      <div class="contact-info">
+        <h3>Get In Touch</h3>
+        <div class="contact-item">
+          <span>📧</span>
+          <span>contactus@jtdfoundation.org</span>
+        </div>
+        <div class="contact-item">
+          <span>📞</span>
+          <span>+91 9880561292</span>
+        </div>
+        <div class="contact-item">
+          <span>📍</span>
+          <span>Palamaneru, Chittoor District,<br>Andhra Pradesh, India.</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 40px; font-size: 13px; color: var(--muted); line-height: 1.8;">
+        <p>Joining The Dots Foundation is a registered nonprofit. All donations are tax-deductible under 80G.</p>
+        <p style="margin-top: 10px;">For corporate partnerships, CSR, or larger contributions, please reach out to us directly via email.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const state = {
+    tab: 'onetime',
+    frequency: 'monthly',
+    ngoName: 'Joining The Dots'
+  };
+
+  // ── Tab Management ────────────────────────────────────────────────────────
+  function switchTab(tab) {
+    state.tab = tab;
+    document.getElementById('tab-onetime').classList.toggle('active', tab === 'onetime');
+    document.getElementById('tab-monthly').classList.toggle('active', tab === 'monthly');
+    document.getElementById('section-onetime').classList.toggle('active', tab === 'onetime');
+    document.getElementById('section-monthly').classList.toggle('active', tab === 'monthly');
+  }
+
+  // Check URL params on load
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get('type');
+    if (type === 'monthly' || type === 'subscription') switchTab('monthly');
+    
+    // Fetch real NGO name if endpoint exists
+    fetch('/health').then(r => r.json()).then(d => { if(d.ngo) state.ngoName = d.ngo; }).catch(()=>{});
+  });
+
+  // ── Selectors ──────────────────────────────────────────────────────────────
+  function selectAmount(type, val, btn) {
+    const grid = type === 'onetime' ? 'onetime-amounts' : 'sub-amounts';
+    const inputId = type === 'onetime' ? 'onetime-amount' : 'sub-amount';
+    document.querySelectorAll(`#${grid} .amount-btn`).forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    
+    const inp = document.getElementById(inputId);
+    if(val === 'custom') {
+      inp.value = '';
+      inp.focus();
+    } else {
+      inp.value = val;
+    }
+  }
+
+  function selectFreq(freq, btn) {
+    state.frequency = freq;
+    document.querySelectorAll('.freq-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  }
+
+  // ── Utils ──────────────────────────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '') + ' show';
+    setTimeout(() => t.classList.remove('show'), 4000);
+  }
+
+  function setLoading(prefix, loading) {
+    const btn = document.getElementById(`${prefix}-submit-btn`);
+    const spin = document.getElementById(`${prefix}-spinner`);
+    const txt = document.getElementById(`${prefix}-btn-text`);
+    btn.disabled = loading;
+    spin.classList.toggle('show', loading);
+    txt.style.display = loading ? 'none' : 'block';
+  }
+
+  function showSuccess(msg) {
+    document.getElementById('formContent').style.display = 'none';
+    const view = document.getElementById('successView');
+    view.classList.add('active');
+    document.getElementById('successMsg').textContent = msg;
+  }
+
+  // ── API Submission ────────────────────────────────────────────────────────
+  async function submitOneTime() {
+    const amount = parseFloat(document.getElementById('onetime-amount').value);
+    const name = document.getElementById('ot-name').value.trim();
+    const email = document.getElementById('ot-email').value.trim();
+    const phone = document.getElementById('ot-phone').value.trim();
+    const message = document.getElementById('ot-message').value.trim();
+
+    if (!amount || amount < 1) return showToast('Please enter a valid amount', true);
+    if (!name || !email) return showToast('Name and Email are required', true);
+
+    setLoading('ot', true);
+    try {
+      const res = await fetch('/api/donation/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, amount, message }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Server error');
+
+      const options = {
+        key: data.keyId, amount: data.amount, currency: data.currency, name: state.ngoName,
+        description: 'One-Time Donation', order_id: data.orderId,
+        prefill: { name, email, contact: phone },
+        theme: { color: '#E8745C' },
+        handler: async (response) => {
+          const vres = await fetch('/api/donation/verify', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(response),
+          });
+          if (vres.ok) showSuccess(`Thank you ${name}! Your generous donation of ₹${amount.toLocaleString('en-IN')} has been received.`);
+          else showToast("Verification failed. Please contact us.", true);
+        },
+        modal: { ondismiss: () => setLoading('ot', false) }
+      };
+      new Razorpay(options).open();
+    } catch (e) {
+      showToast(e.message, true);
+      setLoading('ot', false);
+    }
+  }
+
+  async function submitSubscription() {
+    const amount = parseFloat(document.getElementById('sub-amount').value);
+    const name = document.getElementById('sub-name').value.trim();
+    const email = document.getElementById('sub-email').value.trim();
+    const phone = document.getElementById('sub-phone').value.trim();
+    const frequency = state.frequency;
+
+    if (!amount || amount < 1) return showToast('Please enter a valid amount', true);
+    if (!name || !email) return showToast('Name and Email are required', true);
+
+    setLoading('sub', true);
+    try {
+      const res = await fetch('/api/subscription/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, phone, amount, frequency }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Server error');
+
+      const options = {
+        key: data.keyId, subscription_id: data.subscriptionId, name: state.ngoName,
+        description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Support`,
+        prefill: { name, email, contact: phone },
+        theme: { color: '#E8745C' },
+        handler: async (response) => {
+          const vres = await fetch('/api/subscription/verify', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(response),
+          });
+          if (vres.ok) showSuccess(`Welcome, ${name}! Your ${frequency} recurring support is now active.`);
+          else showToast("Verification failed.", true);
+        },
+        modal: { ondismiss: () => setLoading('sub', false) }
+      };
+      new Razorpay(options).open();
+    } catch (e) {
+      showToast(e.message, true);
+      setLoading('sub', false);
+    }
+  }
+</script>
+
+</body>
+</html>
