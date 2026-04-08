@@ -462,9 +462,9 @@
     const btn = document.getElementById(`${prefix}-submit-btn`);
     const spin = document.getElementById(`${prefix}-spinner`);
     const txt = document.getElementById(`${prefix}-btn-text`);
-    btn.disabled = loading;
-    spin.classList.toggle('show', loading);
-    txt.style.display = loading ? 'none' : 'block';
+    if (btn) btn.disabled = loading;
+    if (spin) spin.classList.toggle('show', loading);
+    if (txt) txt.style.display = loading ? 'none' : 'block';
   }
 
   function showSuccess(msg) {
