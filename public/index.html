@@ -601,6 +601,20 @@
         border-left: 4px solid #e76f00;
         line-height: 1.4;
       }
+
+      /* Validation */
+      .error-text {
+        color: #d93025;
+        font-size: 11px;
+        margin-top: 4px;
+        display: none;
+      }
+      .input-group.has-error input {
+        border-color: #d93025 !important;
+      }
+      .input-group.has-error .error-text {
+        display: block;
+      }
     </style>
   </head>
   <body>
@@ -699,9 +713,15 @@
 
               <div class="input-group">
                 <input type="text" id="ot-name" placeholder="Full Name" />
+                <div class="error-text" id="ot-name-error">
+                  This is missing in this field
+                </div>
               </div>
               <div class="input-group">
                 <input type="email" id="ot-email" placeholder="Email Address" />
+                <div class="error-text" id="ot-email-error">
+                  Please enter a valid email address
+                </div>
               </div>
               <div class="input-group">
                 <input
@@ -709,6 +729,9 @@
                   id="ot-phone"
                   placeholder="Phone Number (Optional)"
                 />
+                <div class="error-text" id="ot-phone-error">
+                  Mobile number must be 10 digits
+                </div>
               </div>
               <div class="input-group">
                 <textarea
@@ -732,6 +755,7 @@
                 class="submit-btn"
                 id="ot-submit-btn"
                 onclick="submitOneTime()"
+                disabled
               >
                 <div class="btn-content">
                   <span class="btn-title">Donate Now</span>
@@ -850,6 +874,9 @@
 
               <div class="input-group">
                 <input type="text" id="sub-name" placeholder="Full Name" />
+                <div class="error-text" id="sub-name-error">
+                  This is missing in this field
+                </div>
               </div>
               <div class="input-group">
                 <input
@@ -857,6 +884,9 @@
                   id="sub-email"
                   placeholder="Email Address"
                 />
+                <div class="error-text" id="sub-email-error">
+                  Please enter a valid email address
+                </div>
               </div>
               <div class="input-group">
                 <input
@@ -864,6 +894,9 @@
                   id="sub-phone"
                   placeholder="Phone Number (Optional)"
                 />
+                <div class="error-text" id="sub-phone-error">
+                  Mobile number must be 10 digits
+                </div>
               </div>
 
               <!-- <button
@@ -882,6 +915,7 @@
                 class="submit-btn"
                 id="sub-submit-btn"
                 onclick="submitSubscription()"
+                disabled
               >
                 <div class="btn-content">
                   <span class="btn-title">Start My Gift</span>
@@ -1125,7 +1159,54 @@
             if (d.ngo) state.ngoName = d.ngo;
           })
           .catch(() => {});
+
+        // Initialize validation listeners
+        ["ot", "sub"].forEach((prefix) => {
+          ["name", "email", "phone"].forEach((field) => {
+            const el = document.getElementById(`${prefix}-${field}`);
+            if (el) {
+              el.addEventListener("input", () => validateForm(prefix));
+              // Initial validation to set button state
+              validateForm(prefix);
+            }
+          });
+        });
       });
+
+      // ── Validation Logic ──────────────────────────────────────────────────────
+      function validateForm(prefix) {
+        const name = document.getElementById(`${prefix}-name`).value.trim();
+        const email = document.getElementById(`${prefix}-email`).value.trim();
+        const phone = document.getElementById(`${prefix}-phone`).value.trim();
+        const btn = document.getElementById(`${prefix}-submit-btn`);
+
+        const isNameValid = name.length > 0;
+        const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        const isPhoneValid = phone.length === 0 || phone.length === 10;
+
+        // Update UI
+        toggleError(`${prefix}-name`, !isNameValid && name !== ""); // Only show error if user typed and deleted
+        toggleError(`${prefix}-email`, !isEmailValid && email !== "");
+        toggleError(`${prefix}-phone`, !isPhoneValid && phone !== "");
+
+        // Special case: show "required" error only after interaction or attempt
+        // For now, let's keep it simple: show error if invalid and not empty
+        // Except for name which is required
+        if (name === "" && document.activeElement.id !== `${prefix}-name`) {
+          // don't show error yet
+        }
+
+        const isValid = isNameValid && isEmailValid && isPhoneValid;
+        btn.disabled = !isValid;
+        return isValid;
+      }
+
+      function toggleError(id, show) {
+        const el = document.getElementById(id);
+        if (el && el.parentElement) {
+          el.parentElement.classList.toggle("has-error", show);
+        }
+      }
 
       // ── Selectors ──────────────────────────────────────────────────────────────
       function selectAmount(type, val, btn) {
@@ -1179,6 +1260,8 @@
 
       // ── API Submission ────────────────────────────────────────────────────────
       async function submitOneTime() {
+        if (!validateForm("ot")) return;
+
         const amount = parseFloat(
           document.getElementById("onetime-amount").value,
         );
@@ -1233,6 +1316,8 @@
       }
 
       async function submitSubscription() {
+        if (!validateForm("sub")) return;
+
         const amount = parseFloat(document.getElementById("sub-amount").value);
         const name = document.getElementById("sub-name").value.trim();
         const email = document.getElementById("sub-email").value.trim();
