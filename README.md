@@ -1,5 +1,5 @@
 # NGO Donation Platform
-> Razorpay + Supabase + Nodemailer | Vercel Deployment | One-Time & Recurring Donations
+> Razorpay + Supabase + Nodemailer | Vercel Deployment | One-Time & Recurring Donations ..
 
 ---
 
