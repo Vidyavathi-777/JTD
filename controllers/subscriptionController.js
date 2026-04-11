@@ -17,21 +17,40 @@ async function getOrCreatePlan(frequency, amountInPaise) {
   const { period, interval } = FREQUENCY_MAP[frequency];
 
   // Check if plan already exists in Supabase
-  const { data: existing } = await supabase
+  const { data: existing, error: findErr } = await supabase
     .from("subscription_plans")
     .select("razorpay_plan_id")
     .eq("frequency", frequency)
     .eq("amount", amountInPaise / 100)
     .maybeSingle();
 
-  if (existing?.razorpay_plan_id) return existing.razorpay_plan_id;
+  if (findErr) {
+    console.warn("[DB] Error finding existing plan:", findErr);
+  }
 
+  // Debug: trace plan reuse
+  console.log(`[SUBSCRIPTION] Plan search: Amount=${amountInPaise / 100}, Frequency=${frequency}`);
+  if (existing?.razorpay_plan_id) {
+    console.log(`[SUBSCRIPTION] Cached plan found: ${existing.razorpay_plan_id}. Verifying with Razorpay...`);
+    try {
+      // Verify the plan actually exists in Razorpay
+      await razorpay.plans.fetch(existing.razorpay_plan_id);
+      console.log(`[SUBSCRIPTION] Plan verified. Reusing ${existing.razorpay_plan_id}`);
+      return existing.razorpay_plan_id;
+    } catch (err) {
+      console.warn(`[SUBSCRIPTION] Cached plan ${existing.razorpay_plan_id} is invalid or expired. Creating fresh one...`);
+      // Optional: Delete the bad entry from DB so we don't try it again
+      await supabase.from("subscription_plans").delete().eq("razorpay_plan_id", existing.razorpay_plan_id);
+    }
+  }
+
+  console.log(`[SUBSCRIPTION] Creating NEW Razorpay plan for ${amountInPaise / 100} ${frequency}`);
   // Create new plan in Razorpay
   const plan = await razorpay.plans.create({
     period,
     interval,
     item: {
-      name: `${process.env.NGO_NAME} — ${frequency} donation`,
+      name: `${process.env.NGO_NAME || "NGO"} — ${frequency} donation`,
       amount: amountInPaise,
       currency: "INR",
       description: `Auto-pay ${frequency} donation`,
@@ -39,11 +58,15 @@ async function getOrCreatePlan(frequency, amountInPaise) {
   });
 
   // Store plan in Supabase
-  await supabase.from("subscription_plans").insert({
+  const { error: insErr } = await supabase.from("subscription_plans").insert({
     razorpay_plan_id: plan.id,
     frequency,
     amount: amountInPaise / 100,
   });
+
+  if (insErr) {
+    console.error("[DB] Error storing new plan:", insErr);
+  }
 
   return plan.id;
 }
@@ -68,15 +91,16 @@ async function createSubscription(req, res) {
 
     const planId = await getOrCreatePlan(frequency, amountInPaise);
 
-    // Razorpay enforces end_time <= year 2120. Calculate safe total_count based on chosen frequency.
-    // The Razorpay absolute max total_count is 1200, but higher frequencies with interval>1 can overflow end_time.
+    // Razorpay enforces end_time <= year 2120. 
+    // We set total_count to a high value to simulate "ongoing" until user cancels.
+    // Monthly (10 years) = 120, Quarterly = 40, etc.
     const TOTAL_COUNT_BY_FREQUENCY = {
-      monthly: 12,    // 12 months = 1 year
-      quarterly: 4,   // 4 quarters = 1 year
-      half_yearly: 2, // 2 half-years = 1 year
-      yearly: 1,      // 1 year = 1 year
+      monthly: 120,
+      quarterly: 40,
+      half_yearly: 20,
+      yearly: 10,
     };
-    const total_count = TOTAL_COUNT_BY_FREQUENCY[frequency];
+    const total_count = TOTAL_COUNT_BY_FREQUENCY[frequency] || 12;
 
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
@@ -100,7 +124,7 @@ async function createSubscription(req, res) {
     });
 
     if (dbErr) {
-      console.error("Supabase subscription insert error:", JSON.stringify(dbErr, null, 2));
+      console.error("[DB] Subscription registration error:", JSON.stringify(dbErr, null, 2));
       return res.status(500).json({ error: "Database registration failed", details: dbErr.message || dbErr });
     }
 
@@ -114,8 +138,18 @@ async function createSubscription(req, res) {
       frequency,
     });
   } catch (err) {
-    console.error("createSubscription error:", err);
-    return res.status(500).json({ error: "Failed to create subscription" });
+    console.error("[CREATE_SUBSCRIPTION_ERROR]", {
+      message: err.message,
+      code: err.code,
+      description: err.description,
+      metadata: err.metadata,
+      stack: err.stack,
+    });
+    
+    return res.status(500).json({ 
+      error: "Failed to create subscription",
+      details: err.description || err.message || "Unknown Razorpay error"
+    });
   }
 }
 
