@@ -212,7 +212,7 @@
 
       .amount-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 8px;
         margin-bottom: 15px;
       }
@@ -658,20 +658,20 @@
             <div class="form-section active" id="section-onetime">
               <label class="field-label">Choose an amount</label>
               <div class="amount-grid" id="onetime-amounts">
-                <button
+                <!-- <button
                   class="amount-btn"
                   data-val="100"
                   onclick="selectAmount('onetime', 100, this)"
                 >
                   ₹100
-                </button>
-                <button
+                </button> -->
+                <!-- <button
                   class="amount-btn"
                   data-val="500"
                   onclick="selectAmount('onetime', 500, this)"
                 >
                   ₹500
-                </button>
+                </button> -->
                 <button
                   class="amount-btn"
                   data-val="1000"
@@ -721,6 +721,17 @@
                 <input type="email" id="ot-email" placeholder="Email Address" />
                 <div class="error-text" id="ot-email-error">
                   Please enter a valid email address
+                </div>
+              </div>
+              <div class="input-group">
+                <input
+                  type="text"
+                  id="ot-pan"
+                  placeholder="PAN Number"
+                  maxlength="10"
+                />
+                <div class="error-text" id="ot-pan-error">
+                  Please enter a valid PAN (e.g. ABCDE1234F)
                 </div>
               </div>
               <div class="input-group">
@@ -819,20 +830,20 @@
                 >How much would you like to give?</label
               >
               <div class="amount-grid" id="sub-amounts">
-                <button
+                <!-- <button
                   class="amount-btn"
                   data-val="200"
                   onclick="selectAmount('sub', 200, this)"
                 >
                   ₹200
-                </button>
-                <button
+                </button> -->
+                <!-- <button
                   class="amount-btn"
                   data-val="500"
                   onclick="selectAmount('sub', 500, this)"
                 >
                   ₹500
-                </button>
+                </button> -->
                 <button
                   class="amount-btn"
                   data-val="1000"
@@ -886,6 +897,17 @@
                 />
                 <div class="error-text" id="sub-email-error">
                   Please enter a valid email address
+                </div>
+              </div>
+              <div class="input-group">
+                <input
+                  type="text"
+                  id="sub-pan"
+                  placeholder="PAN Number"
+                  maxlength="10"
+                />
+                <div class="error-text" id="sub-pan-error">
+                  Please enter a valid PAN (e.g. ABCDE1234F)
                 </div>
               </div>
               <div class="input-group">
@@ -1003,6 +1025,31 @@
             makes that bridge real.
           </p>
 
+          <div style="margin: 40px 0; display: flex; justify-content: center">
+            <iframe
+              width="315"
+              height="560"
+              src="https://www.youtube.com/embed/3QQFay4ZYww"
+              title="YouTube Shorts video"
+              frameborder="0"
+              allow="
+                accelerometer;
+                autoplay;
+                clipboard-write;
+                encrypted-media;
+                gyroscope;
+                picture-in-picture;
+                web-share;
+              "
+              allowfullscreen
+              style="
+                border-radius: 16px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+              "
+            >
+            </iframe>
+          </div>
+
           <!-- <div class="contact-info">
             <h3>Get In Touch</h3>
             <div class="contact-item">
@@ -1022,7 +1069,7 @@
             </div>
           </div> -->
 
-          <div class="stats-section">
+          <!-- <div class="stats-section">
             <div class="stat-card">
               <h2>500+</h2>
               <p>Children reached<br />every year</p>
@@ -1037,16 +1084,16 @@
               <h2>3</h2>
               <p>Districts served in<br />AP</p>
             </div>
-          </div>
+          </div> -->
 
-          <div class="testimonial">
+          <!-- <div class="testimonial">
             <div class="quote-icon">“</div>
             <p class="quote-text">
               "Before JTD came to our village, I had never held a paintbrush.
               Now I teach art to younger children every week."
             </p>
             <p class="author">— Priya, age 16, Palamaneru</p>
-          </div>
+          </div> -->
           <!-- <div
             style="
               margin-top: 40px;
@@ -1162,7 +1209,7 @@
 
         // Initialize validation listeners
         ["ot", "sub"].forEach((prefix) => {
-          ["name", "email", "phone"].forEach((field) => {
+          ["name", "email", "pan", "phone"].forEach((field) => {
             const el = document.getElementById(`${prefix}-${field}`);
             if (el) {
               el.addEventListener("input", () => validateForm(prefix));
@@ -1171,22 +1218,36 @@
             }
           });
         });
+        // AUTO UPPERCASE PAN
+        document.querySelectorAll("#ot-pan, #sub-pan").forEach((el) => {
+          el.addEventListener("input", (e) => {
+            e.target.value = e.target.value.toUpperCase();
+          });
+        });
       });
 
       // ── Validation Logic ──────────────────────────────────────────────────────
       function validateForm(prefix) {
         const name = document.getElementById(`${prefix}-name`).value.trim();
         const email = document.getElementById(`${prefix}-email`).value.trim();
+        const pan = document
+          .getElementById(`${prefix}-pan`)
+          .value.trim()
+          .toUpperCase();
         const phone = document.getElementById(`${prefix}-phone`).value.trim();
         const btn = document.getElementById(`${prefix}-submit-btn`);
 
         const isNameValid = name.length > 0;
         const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         const isPhoneValid = phone.length === 0 || phone.length === 10;
+        // PAN VALIDATION
+        const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+        const isPanValid = panRegex.test(pan);
 
         // Update UI
         toggleError(`${prefix}-name`, !isNameValid && name !== ""); // Only show error if user typed and deleted
         toggleError(`${prefix}-email`, !isEmailValid && email !== "");
+        toggleError(`${prefix}-pan`, !isPanValid && pan !== "");
         toggleError(`${prefix}-phone`, !isPhoneValid && phone !== "");
 
         // Special case: show "required" error only after interaction or attempt
@@ -1196,7 +1257,8 @@
           // don't show error yet
         }
 
-        const isValid = isNameValid && isEmailValid && isPhoneValid;
+        const isValid =
+          isNameValid && isEmailValid && isPanValid && isPhoneValid;
         btn.disabled = !isValid;
         return isValid;
       }
@@ -1268,6 +1330,10 @@
         const name = document.getElementById("ot-name").value.trim();
         const email = document.getElementById("ot-email").value.trim();
         const phone = document.getElementById("ot-phone").value.trim();
+        const pan = document
+          .getElementById("ot-pan")
+          .value.trim()
+          .toUpperCase();
         const message = document.getElementById("ot-message").value.trim();
 
         if (!amount || amount < 1)
@@ -1280,7 +1346,7 @@
           const res = await fetch("/api/donation/order", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, phone, amount, message }),
+            body: JSON.stringify({ name, email, pan, phone, amount, message }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Server error");
@@ -1298,7 +1364,7 @@
               const vres = await fetch("/api/donation/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(response),
+                body: JSON.stringify(response, name, email, phone, pan, amount),
               });
               if (vres.ok)
                 showSuccess(
@@ -1321,6 +1387,10 @@
         const amount = parseFloat(document.getElementById("sub-amount").value);
         const name = document.getElementById("sub-name").value.trim();
         const email = document.getElementById("sub-email").value.trim();
+        const pan = document
+          .getElementById("sub-pan")
+          .value.trim()
+          .toUpperCase();
         const phone = document.getElementById("sub-phone").value.trim();
         const frequency = state.frequency;
 
@@ -1334,7 +1404,14 @@
           const res = await fetch("/api/subscription/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, phone, amount, frequency }),
+            body: JSON.stringify({
+              name,
+              email,
+              pan,
+              phone,
+              amount,
+              frequency,
+            }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Server error");
@@ -1350,7 +1427,15 @@
               const vres = await fetch("/api/subscription/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(response),
+                body: JSON.stringify(
+                  response,
+                  name,
+                  email,
+                  phone,
+                  pan,
+                  amount,
+                  frequency,
+                ),
               });
               if (vres.ok)
                 showSuccess(
