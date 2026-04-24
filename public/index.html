@@ -708,13 +708,17 @@
                   class="custom-amt"
                   id="onetime-amount"
                   placeholder="Enter Amount"
+                  min="1"
                 />
               </div>
 
               <div class="input-group">
                 <input type="text" id="ot-name" placeholder="Full Name" />
-                <div class="error-text" id="ot-name-error">
+                <!-- <div class="error-text" id="ot-name-error">
                   This is missing in this field
+                </div> -->
+                <div class="error-text" id="ot-name-error">
+                  Please enter a valid name (letters only)
                 </div>
               </div>
               <div class="input-group">
@@ -880,13 +884,17 @@
                   class="custom-amt"
                   id="sub-amount"
                   placeholder="Enter Amount"
+                  min="1"
                 />
               </div>
 
               <div class="input-group">
                 <input type="text" id="sub-name" placeholder="Full Name" />
-                <div class="error-text" id="sub-name-error">
+                <!-- <div class="error-text" id="sub-name-error">
                   This is missing in this field
+                </div> -->
+                <div class="error-text" id="sub-name-error">
+                  Please enter a valid name (letters only)
                 </div>
               </div>
               <div class="input-group">
@@ -1224,6 +1232,11 @@
             e.target.value = e.target.value.toUpperCase();
           });
         });
+        document.querySelectorAll(".custom-amt").forEach((input) => {
+          input.addEventListener("input", () => {
+            if (input.value < 0) input.value = "";
+          });
+        });
       });
 
       // ── Validation Logic ──────────────────────────────────────────────────────
@@ -1237,7 +1250,9 @@
         const phone = document.getElementById(`${prefix}-phone`).value.trim();
         const btn = document.getElementById(`${prefix}-submit-btn`);
 
-        const isNameValid = name.length > 0;
+        // const isNameValid = name.length > 0;
+        const nameRegex = /^[A-Za-z\s]+$/;
+        const isNameValid = nameRegex.test(name);
         const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
         const isPhoneValid = phone.length === 0 || phone.length === 10;
         // PAN VALIDATION
@@ -1336,7 +1351,8 @@
           .toUpperCase();
         const message = document.getElementById("ot-message").value.trim();
 
-        if (!amount || amount < 1)
+        // if (!amount || amount < 1)
+        if (!amount || amount <= 0)
           return showToast("Please enter a valid amount", true);
         if (!name || !email)
           return showToast("Name and Email are required", true);
@@ -1394,7 +1410,8 @@
         const phone = document.getElementById("sub-phone").value.trim();
         const frequency = state.frequency;
 
-        if (!amount || amount < 1)
+        // if (!amount || amount < 1)
+        if (!amount || amount <= 0)
           return showToast("Please enter a valid amount", true);
         if (!name || !email)
           return showToast("Name and Email are required", true);
