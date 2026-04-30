@@ -1,4 +1,10 @@
 # NGO Donation Platform
+
+Developed a donation platform supporting both one-time and recurring payments.
+Integrated Razorpay payment gateway to enable secure and seamless transactions.
+Implemented form validation for user inputs such as PAN, email, and phone number.
+Managed payment states (loading, success, error) to enhance overall user experience.
+
 > Razorpay + Supabase + Nodemailer | Vercel Deployment | One-Time & Recurring Donations ..
 
 ---
