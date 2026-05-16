@@ -7,6 +7,7 @@ const bodyParser = require("body-parser");
 
 const donationRoutes = require("../routes/donation");
 const subscriptionRoutes = require("../routes/subscription");
+const adminRoutes = require("../routes/admin");
 const { validateWebhook } = require("../middleware/validateWebhook");
 const { handleWebhook } = require("../webhooks/razorpayWebhook");
 
@@ -34,7 +35,13 @@ app.use((req, res, next) => {
 // ─── JSON body parser for all other routes ────────────────────────────────────
 app.use((req, res, next) => {
   if (req.path !== "/webhook/razorpay") {
-    express.json()(req, res, next);
+    express.json()(req, res, (err) => {
+      if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+        console.error("JSON Syntax Error:", err.message);
+        return res.status(400).json({ error: "Invalid JSON payload" });
+      }
+      next(err);
+    });
   } else {
     next();
   }
@@ -51,6 +58,7 @@ app.get("/health", (req, res) => res.json({ status: "ok", ngo: process.env.NGO_N
 // ─── API Routes ───────────────────────────────────────────────────────────────
 app.use("/api/donation", donationRoutes);
 app.use("/api/subscription", subscriptionRoutes);
+app.use("/api/admin", adminRoutes);
 
 // ─── Razorpay Webhook ─────────────────────────────────────────────────────────
 app.post("/webhook/razorpay", validateWebhook, handleWebhook);

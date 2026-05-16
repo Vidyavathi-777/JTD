@@ -135,4 +135,36 @@ function recurringChargeEmail({ name, email, amount, frequency, subscriptionId, 
 </body></html>`;
 }
 
-module.exports = { oneTimeDonationEmail, subscriptionWelcomeEmail, recurringChargeEmail };
+// ─── 4. Admin notification (for the NGO) ──────────────────────────────────────
+function adminNotificationEmail({ donorName, donorEmail, donorPhone, donorPan, amount, paymentId, type, details }) {
+  return `
+<!DOCTYPE html><html><head><meta charset="UTF-8">${baseStyle}</head><body>
+<div class="wrapper">
+  <div class="header">
+    <h1>New Contribution Received!</h1>
+    <p>${NGO_NAME.toUpperCase()}</p>
+  </div>
+  <div class="body">
+    <p class="message">A new contribution has been successfully processed through the portal.</p>
+    <div class="amount-highlight">
+      <div class="amount-val">₹${Number(amount).toLocaleString("en-IN")}</div>
+      <div class="status-badge">${type.toUpperCase()} SUCCESS</div>
+    </div>
+    <div class="card">
+      <div class="card-row"><span class="card-label">Donor Name : </span><span class="card-value">${donorName}</span></div>
+      <div class="card-row"><span class="card-label">Email : </span><span class="card-value">${donorEmail}</span></div>
+      <div class="card-row"><span class="card-label">Phone : </span><span class="card-value">${donorPhone || "N/A"}</span></div>
+      <div class="card-row"><span class="card-label">PAN : </span><span class="card-value">${donorPan || "N/A"}</span></div>
+      <div class="card-row"><span class="card-label">Payment ID : </span><span class="card-value">${paymentId}</span></div>
+      <div class="card-row"><span class="card-label">Type : </span><span class="card-value">${type}</span></div>
+      ${details ? `<div class="card-row"><span class="card-label">Details : </span><span class="card-value">${details}</span></div>` : ""}
+    </div>
+    <div class="divider"></div>
+    <p class="message" style="font-size: 13px;">This is an automated notification for the NGO administrative team.</p>
+  </div>
+  
+</div>
+</body></html>`;
+}
+
+module.exports = { oneTimeDonationEmail, subscriptionWelcomeEmail, recurringChargeEmail, adminNotificationEmail };

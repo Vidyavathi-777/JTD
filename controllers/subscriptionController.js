@@ -2,7 +2,7 @@ const crypto = require("crypto");
 const razorpay = require("../config/razorpay");
 const supabase = require("../config/supabase");
 const { sendMail } = require("../config/mailer");
-const { subscriptionWelcomeEmail } = require("../emails/templates");
+const { subscriptionWelcomeEmail, adminNotificationEmail } = require("../emails/templates");
 
 // ─── Frequency → Razorpay period mapping ─────────────────────────────────────
 const FREQUENCY_MAP = {
@@ -74,7 +74,7 @@ async function getOrCreatePlan(frequency, amountInPaise) {
 // ─── Create Subscription ─────────────────────────────────────────────────────
 async function createSubscription(req, res) {
   try {
-    const { name, email, phone, amount, frequency, message } = req.body;
+    const { name, email, phone, amount, frequency, message, pan } = req.body;
 
     if (!name || !email || !amount || !frequency) {
       return res.status(400).json({ error: "name, email, amount and frequency are required" });
@@ -89,25 +89,48 @@ async function createSubscription(req, res) {
       return res.status(400).json({ error: "Minimum donation is ₹1" });
     }
 
+    // ─── Get or Create Razorpay Customer ──────────────────────────────────────
+    const customerList = await razorpay.customers.all({ count: 100 });
+    const existingCustomer = customerList.items.find((c) => c.email === email);
+
+    let customer;
+    const customerName = name;
+
+    if (existingCustomer) {
+      customer = await razorpay.customers.edit(existingCustomer.id, {
+        name: customerName,
+        contact: phone || "",
+        notes: { pan: pan || "N/A" },
+      });
+    } else {
+      customer = await razorpay.customers.create({
+        name: customerName,
+        email,
+        contact: phone || "",
+        notes: { pan: pan || "N/A" },
+      });
+    }
+
     const planId = await getOrCreatePlan(frequency, amountInPaise);
 
     // Razorpay enforces end_time <= year 2120. 
     // We set total_count to a high value to simulate "ongoing" until user cancels.
     // Monthly (10 years) = 120, Quarterly = 40, etc.
     const TOTAL_COUNT_BY_FREQUENCY = {
-      monthly: 120,
-      quarterly: 40,
-      half_yearly: 20,
-      yearly: 10,
+      monthly: 12,
+      quarterly: 4,
+      half_yearly: 2,
+      yearly: 1,
     };
     const total_count = TOTAL_COUNT_BY_FREQUENCY[frequency] || 12;
 
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
+      customer_id: customer.id,
       total_count,
       quantity: 1,
       customer_notify: 1,
-      notes: { name, email, phone: phone || "", message: message || "" },
+      notes: { name, email, phone: phone || "", message: message || "", pan: pan || "" },
     });
 
     // Persist to Supabase
@@ -131,6 +154,7 @@ async function createSubscription(req, res) {
     return res.json({
       subscriptionId: subscription.id,
       keyId: process.env.RAZORPAY_KEY_ID,
+      customerId: customer.id,
       name,
       email,
       phone: phone || "",
@@ -214,6 +238,28 @@ async function verifySubscription(req, res) {
       );
     } catch (emailErr) {
       console.error("Subscription welcome email failed:", emailErr);
+    }
+
+    // Admin notification
+    if (process.env.ADMIN_EMAIL) {
+      try {
+        await sendMail(
+          process.env.ADMIN_EMAIL,
+          `🔔 New Subscription: ₹${sub.amount} from ${sub.name}`,
+          adminNotificationEmail({
+            donorName: sub.name,
+            donorEmail: sub.email,
+            donorPhone: sub.phone,
+            donorPan: sub.pan || "N/A",
+            amount: sub.amount,
+            paymentId: razorpay_subscription_id,
+            type: "Recurring Subscription",
+            details: `Frequency: ${sub.frequency}`,
+          })
+        );
+      } catch (adminEmailErr) {
+        console.error("Admin notification failed:", adminEmailErr);
+      }
     }
 
     return res.json({ success: true, subscriptionId: razorpay_subscription_id });

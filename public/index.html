@@ -1374,13 +1374,14 @@
             name: state.ngoName,
             description: "One-Time Donation",
             order_id: data.orderId,
+            customer_id: data.customerId,
             prefill: { name, email, contact: phone },
             theme: { color: "#E8745C" },
             handler: async (response) => {
               const vres = await fetch("/api/donation/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(response, name, email, phone, pan, amount),
+                body: JSON.stringify({ ...response, name, email, phone, pan, amount }),
               });
               if (vres.ok)
                 showSuccess(
@@ -1436,6 +1437,7 @@
           const options = {
             key: data.keyId,
             subscription_id: data.subscriptionId,
+            customer_id: data.customerId,
             name: state.ngoName,
             description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Support`,
             prefill: { name, email, contact: phone },
@@ -1444,15 +1446,15 @@
               const vres = await fetch("/api/subscription/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(
-                  response,
+                body: JSON.stringify({
+                  ...response,
                   name,
                   email,
                   phone,
                   pan,
                   amount,
                   frequency,
-                ),
+                }),
               });
               if (vres.ok)
                 showSuccess(

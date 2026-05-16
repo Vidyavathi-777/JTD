@@ -2,12 +2,12 @@ const crypto = require("crypto");
 const razorpay = require("../config/razorpay");
 const supabase = require("../config/supabase");
 const { sendMail } = require("../config/mailer");
-const { oneTimeDonationEmail } = require("../emails/templates");
+const { oneTimeDonationEmail, adminNotificationEmail } = require("../emails/templates");
 
 // ─── Create Razorpay Order ────────────────────────────────────────────────────
 async function createOrder(req, res) {
   try {
-    const { name, email, phone, amount, message } = req.body;
+    const { name, email, phone, amount, message, pan } = req.body;
 
     if (!name || !email || !amount) {
       return res.status(400).json({ error: "name, email and amount are required" });
@@ -18,11 +18,36 @@ async function createOrder(req, res) {
       return res.status(400).json({ error: "Minimum donation is ₹1" });
     }
 
+    // ─── Get or Create Razorpay Customer ──────────────────────────────────────
+    // Manual search by email to ensure we don't create duplicates and can update existing ones.
+    const customerList = await razorpay.customers.all({ count: 100 });
+    const existingCustomer = customerList.items.find((c) => c.email === email);
+
+    let customer;
+    const customerName = name;
+
+    if (existingCustomer) {
+      // Update existing customer details
+      customer = await razorpay.customers.edit(existingCustomer.id, {
+        name: customerName,
+        contact: phone || "",
+        notes: { pan: pan || "N/A" },
+      });
+    } else {
+      // Create new customer
+      customer = await razorpay.customers.create({
+        name: customerName,
+        email,
+        contact: phone || "",
+        notes: { pan: pan || "N/A" },
+      });
+    }
+
     const order = await razorpay.orders.create({
       amount: amountInPaise,
       currency: "INR",
       receipt: `don_${Date.now()}`,
-      notes: { name, email, phone: phone || "", message: message || "" },
+      notes: { name, email, phone: phone || "", message: message || "", pan: pan || "" },
     });
 
     // Persist to Supabase (status: pending until verified)
@@ -46,6 +71,7 @@ async function createOrder(req, res) {
       amount: order.amount,
       currency: order.currency,
       keyId: process.env.RAZORPAY_KEY_ID,
+      customerId: customer.id,
       name,
       email,
       phone: phone || "",
@@ -117,6 +143,27 @@ async function verifyPayment(req, res) {
       );
     } catch (emailErr) {
       console.error("Donation email failed:", emailErr);
+    }
+
+    // Admin notification
+    if (process.env.ADMIN_EMAIL) {
+      try {
+        await sendMail(
+          process.env.ADMIN_EMAIL,
+          `🔔 New Donation: ₹${donation.amount} from ${donation.name}`,
+          adminNotificationEmail({
+            donorName: donation.name,
+            donorEmail: donation.email,
+            donorPhone: donation.phone,
+            donorPan: donation.pan || "N/A",
+            amount: donation.amount,
+            paymentId: razorpay_payment_id,
+            type: "One-time Donation",
+          })
+        );
+      } catch (adminEmailErr) {
+        console.error("Admin notification failed:", adminEmailErr);
+      }
     }
 
     return res.json({ success: true, donationId: donation.id, paymentId: razorpay_payment_id });
